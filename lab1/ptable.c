@@ -59,7 +59,7 @@ int main()
     int i;
     for (i = 0; i < 4; i++)
     {
-        printf("p%d: \t%u\t\t%u\t\t%u\n", i + 1, current->start_sector, (current->nr_sectors + current->start_sector), current->nr_sectors);
+        printf("p%d: \t%u\t\t%u\t\t%u\n", i + 1, current->start_sector, (current->nr_sectors + current->start_sector - 1), current->nr_sectors);
         if (i != 3)
             current++;
         else
@@ -84,12 +84,12 @@ int main()
         {
             s[i] = current->start_sector;
             n[i] = current->nr_sectors;
-            printf("Entry%d: start_sector: %u end_sector: %u\n", i, s[i], n[i]);
+            printf("Entry%d: start_sector: %u end_sector: %u\n", i + 1, s[i], n[i]);
             current++;
         }
 
         printf("\n\tstart_sector\tend_sector\tnr_sector\n");
-        printf("p%d: \t%u\t\t%u\t\t%u\n", j + 4, s[0] + c_start + addition, s[0] + n[0] + c_start - 1, n[0]);
+        printf("p%d: \t%u\t\t%u\t\t%u\n\n", j + 4, s[0] + c_start + addition, s[0] + n[0] + c_start - 1, n[0]);
         c_start = s[1] + ext_start;
         if (s[1] != 0)
             printf("next MBR= %u + %u = %u\n\n", s[1], ext_start, c_start);
@@ -97,25 +97,4 @@ int main()
             printf("End of extended partitions\n");
         j++;
     } while (s[1] != 0);
-    // st
-    //     printf("p1:\t%u%u%u", )
-
-    // Write code to print all 4 partitions;
-
-    // ASSUME P4 is EXTEND type:
-    // Let int extStart = P4's start_sector; print extStart to see it;
-
-    //     localMBR = extStart;
-    // loop:
-    //     read_sector(fd, localMBR, buf);
-
-    //     // partition table of localMBR in buf[ ] has 2 entries:
-    //     // print entry 1's start_sector, nr_sector;
-    //     // compute and print P5's begin, end, nr_sectors
-
-    //         if (entry 2's start_sector != 0)
-    //     {
-    //         compute and print next localMBR sector;
-    //         continue loop;
-    //     }
 }
