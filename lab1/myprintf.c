@@ -25,11 +25,11 @@ int main(int argc, char *argv[], char *env[])
     myprintf("argv= \n");
     int i;
     for (i = 1; i < argc; i++)
-        printf("%s, ", argv[i]);
+        myprintf("%s, ", argv[i]);
 
     myprintf("env= \n");
     for (i = 0; env[i] != NULL; i++)
-        printf("%s, \n", env[i]);
+        myprintf("%s, \n", env[i]);
 
     myprintf("cha=%c string=%s      dec=%d hex=%x oct=%o neg=%d\n",
              'A', "this is a test", 100, 100, 100, -100);
