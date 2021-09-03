@@ -22,12 +22,12 @@ int main(int argc, char *argv[], char *env[])
 {
     myprintf("argc= %d", argc);
 
-    myprintf("argv= \n");
+    myprintf("argv= ");
     int i;
     for (i = 1; i < argc; i++)
         myprintf("%s, ", argv[i]);
 
-    myprintf("env= \n");
+    myprintf("\nenv= \n");
     for (i = 0; env[i] != NULL; i++)
         myprintf("%s, \n", env[i]);
 
