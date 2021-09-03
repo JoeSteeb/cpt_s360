@@ -89,14 +89,14 @@ int myprintf(char *fmt, ...)
     char *cp = fmt;
     bool foundInit = false;
     va_list va;
-    int p_count = 0;
+    // int p_count = 0;
 
-    while (*cp != '\0')
-    {
-        if (*cp == '%')
-            p_count++;
-        *cp++;
-    }
+    // while (*cp != '\0')
+    // {
+    //     if (*cp == '%')
+    //         p_count++;
+    //     *cp++;
+    // }
 
     cp = fmt;
     va_start(va, fmt);
