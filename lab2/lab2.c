@@ -1,31 +1,32 @@
-#include <stdio.h>             // for I/O
-#include <stdlib.h>            // for I/O
-#include <libgen.h>            // for dirname()/basename()
+#include <stdio.h>  // for I/O
+#include <stdlib.h> // for I/O
+#include <libgen.h> // for dirname()/basename()
 #include <string.h>
 
-typedef struct node{
-         char  name[64];       // node's name string
-         char  type;           // 'D' for DIR; 'F' for file
-   struct node *child, *sibling, *parent;
-}NODE;
-
+typedef struct node
+{
+  char name[64]; // node's name string
+  char type;     // 'D' for DIR; 'F' for file
+  struct node *child, *sibling, *parent;
+} NODE;
 
 NODE *root, *cwd, *start;
 char line[128];
 char command[16], pathname[64];
 
-//               0       1      2    
+//               0       1      2
 char *cmd[] = {"mkdir", "ls", "quit", "cd", 0};
 
 int findCmd(char *command)
 {
-   int i = 0;
-   while(cmd[i]){
-     if (strcmp(command, cmd[i])==0)
-         return i;
-     i++;
-   }
-   return -1;
+  int i = 0;
+  while (cmd[i])
+  {
+    if (strcmp(command, cmd[i]) == 0)
+      return i;
+    i++;
+  }
+  return -1;
 }
 
 NODE *search_child(NODE *parent, char *name)
@@ -33,10 +34,11 @@ NODE *search_child(NODE *parent, char *name)
   NODE *p;
   printf("search for %s in parent DIR\n", name);
   p = parent->child;
-  if (p==0)
+  if (p == 0)
     return 0;
-  while(p){
-    if (strcmp(p->name, name)==0)
+  while (p)
+  {
+    if (strcmp(p->name, name) == 0)
       return p;
     p = p->sibling;
   }
@@ -48,10 +50,11 @@ int insert_child(NODE *parent, NODE *q)
   NODE *p;
   printf("insert NODE %s into END of parent child list\n", q->name);
   p = parent->child;
-  if (p==0)
+  if (p == 0)
     parent->child = q;
-  else{
-    while(p->sibling)
+  else
+  {
+    while (p->sibling)
       p = p->sibling;
     p->sibling = q;
   }
@@ -70,18 +73,20 @@ int mkdir(char *name)
   NODE *p, *q;
   printf("mkdir: name=%s\n", name);
 
-  if (!strcmp(name, "/") || !strcmp(name, ".") || !strcmp(name, "..")){
+  if (!strcmp(name, "/") || !strcmp(name, ".") || !strcmp(name, ".."))
+  {
     printf("can't mkdir with %s\n", name);
     return -1;
   }
-  if (name[0]=='/')
+  if (name[0] == '/')
     start = root;
   else
     start = cwd;
 
   printf("check whether %s already exists\n", name);
   p = search_child(start, name);
-  if (p){
+  if (p)
+  {
     printf("name %s already exists, mkdir FAILED\n", name);
     return -1;
   }
@@ -93,7 +98,7 @@ int mkdir(char *name)
   insert_child(start, q);
   printf("mkdir %s OK\n", name);
   printf("--------------------------------------\n");
-    
+
   return 0;
 }
 
@@ -102,7 +107,8 @@ int ls()
 {
   NODE *p = cwd->child;
   printf("cwd contents = ");
-  while(p){
+  while (p)
+  {
     printf("[%c %s] ", p->type, p->name);
     p = p->sibling;
   }
@@ -119,40 +125,40 @@ int quit()
 
 int initialize()
 {
-    root = (NODE *)malloc(sizeof(NODE));
-    strcpy(root->name, "/");
-    root->parent = root;
-    root->sibling = 0;
-    root->child = 0;
-    root->type = 'D';
-    cwd = root;
-    printf("Root initialized OK\n");
+  root = (NODE *)malloc(sizeof(NODE));
+  strcpy(root->name, "/");
+  root->parent = root;
+  root->sibling = 0;
+  root->child = 0;
+  root->type = 'D';
+  cwd = root;
+  printf("Root initialized OK\n");
 }
 
 int cd(char *pathname)
 {
-    if(strcmp(pathname, "") == 0)
-    {
-        printf("no arg");
-        cwd = root;
-        return 0;
-    }
+  if (strcmp(pathname, "") == 0)
+  {
+    printf("no arg");
+    cwd = root;
+    return 0;
+  }
 
-    NODE *current = cwd->child;
+  NODE *current = cwd->child;
 
-    while(current)
+  while (current)
+  {
+    if (strcmp(current->name, pathname) == 0)
     {
-        if(strcmp(current->name, pathname) == 0)
-        {
-            cwd = current;
-            printf("cwd = %s child= %s\n", cwd->name, cwd->child->name);
-            return 0;
-        }
-        current = current->sibling;
+      cwd = current;
+      printf("cwd = %s child= %s\n", cwd->name, cwd->child->name);
+      return 0;
     }
-    
-    printf("Directory name not found\n");
-    return -1;
+    current = current->sibling;
+  }
+
+  printf("Directory name not found\n");
+  return -1;
 }
 
 int main()
@@ -164,25 +170,35 @@ int main()
   printf("NOTE: commands = [mkdir|ls|quit|cd]\n");
   printf("cwd = %s child= %s", cwd->name, cwd->child->name);
 
-  while(1){
-      printf("Enter command line : ");
-      fgets(line, 128, stdin);
-      line[strlen(line)-1] = 0;
+  while (1)
+  {
+    printf("Enter command line : ");
+    fgets(line, 128, stdin);
+    line[strlen(line) - 1] = 0;
 
-      command[0] = pathname[0] = 0;
-      sscanf(line, "%s %s", command, pathname);
-      printf("command=%s pathname=%s\n", command, pathname);
-      
-      if (command[0]==0) 
-         continue;
+    command[0] = pathname[0] = 0;
+    sscanf(line, "%s %s", command, pathname);
+    printf("command=%s pathname=%s\n", command, pathname);
 
-      index = findCmd(command);
+    if (command[0] == 0)
+      continue;
 
-      switch (index){
-        case 0: mkdir(pathname); break;
-        case 1: ls();            break;
-        case 2: quit();          break;
-        case 3: cd(pathname);    break;
-      }
+    index = findCmd(command);
+
+    switch (index)
+    {
+    case 0:
+      mkdir(pathname);
+      break;
+    case 1:
+      ls();
+      break;
+    case 2:
+      quit();
+      break;
+    case 3:
+      cd(pathname);
+      break;
+    }
   }
 }
