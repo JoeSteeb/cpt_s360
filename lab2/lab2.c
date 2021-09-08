@@ -15,7 +15,7 @@ char line[128];
 char command[16], pathname[64];
 
 //               0       1      2
-char *cmd[] = {"mkdir", "ls", "quit", "cd", 0};
+char *cmd[] = {"mkdir", "ls", "quit", "cd", "pwd", 0};
 
 int findCmd(char *command)
 {
@@ -161,6 +161,23 @@ int cd(char *pathname)
   return -1;
 }
 
+int pwd_help(NODE *current)
+{
+  if (current != root)
+  {
+    pwd_help(current->parent);
+    printf("%s/", current->name);
+  }
+  else
+    printf("%s", current->name);
+}
+
+int pwd()
+{
+  pwd_help(cwd);
+  printf("\n");
+}
+
 int main()
 {
   int index;
@@ -198,6 +215,9 @@ int main()
       break;
     case 3:
       cd(pathname);
+      break;
+    case 4:
+      pwd();
       break;
     }
   }
