@@ -2,6 +2,7 @@
 #include <stdlib.h> // for I/O
 #include <libgen.h> // for dirname()/basename()
 #include <string.h>
+#include <stdbool.h>
 
 typedef struct node
 {
@@ -32,13 +33,13 @@ int findCmd(char *command)
 NODE *search_child(NODE *parent, char *name)
 {
   NODE *p;
-  printf("search for %s in parent DIR\n", name);
+  // printf("search for %s in parent DIR\n", name);
   p = parent->child;
   if (p == 0)
     return 0;
   while (p)
   {
-    if (strcmp(p->name, name) == 0)
+    if (!strcmp(p->name, name))
       return p;
     p = p->sibling;
   }
@@ -102,10 +103,54 @@ int mkdir(char *name)
   return 0;
 }
 
-// This ls() list CWD. You MUST improve it to ls(char *pathname)
-int ls()
+NODE *goto_path(char *pathname)
 {
-  NODE *p = cwd->child;
+  int i = 0;
+  int buffi = 0;
+  char buffer[64] = "";
+  NODE *current_dir;
+  if (pathname[0] == '/')
+    current_dir = root;
+  else
+    current_dir = cwd;
+
+  while (pathname[i] != '\0')
+  {
+    // printf("%d\n", i);
+    if (pathname[i] == '/')
+    {
+      current_dir = search_child(current_dir, buffer);
+      buffer[0] = '\0';
+      buffi = 0;
+    }
+    else
+    {
+      buffer[buffi] = pathname[i];
+      // printf("%c\n", buffer[buffi]);
+      // printf("%s\n", buffer);
+      buffi++;
+    }
+    i++;
+  }
+  current_dir = search_child(current_dir, buffer);
+  printf("%s\n", buffer);
+  return current_dir;
+}
+
+// This ls() list CWD. You MUST improve it to ls(char *pathname)
+int ls(char *pathname)
+{
+  NODE *p;
+  if (!strcmp(pathname, ""))
+  {
+    printf("wtf");
+    p = cwd->child;
+  }
+  else
+  {
+    p = goto_path(pathname);
+    printf("pathname = %s", p->name);
+  }
   printf("cwd contents = ");
   while (p)
   {
@@ -135,30 +180,23 @@ int initialize()
   printf("Root initialized OK\n");
 }
 
+// int find_dir(char *buffer, NODE *current_dir)
+// {
+//   while (current_dir)
+//   {
+//     if (current_dir->name == buffer)
+//       return 0;
+//   }
+//   return -1;
+// }
+
 int cd(char *pathname)
 {
-  if (strcmp(pathname, "") == 0)
-  {
-    printf("no arg");
+  printf("pathname =%s", pathname);
+  if (!strcmp(pathname, "/") || pathname[0] == '\0')
     cwd = root;
-    return 0;
-  }
-
-  NODE *current = cwd->child;
-
-  while (current)
-  {
-    if (strcmp(current->name, pathname) == 0)
-    {
-      cwd = current;
-      printf("cwd = %s child= %s\n", cwd->name, cwd->child->name);
-      return 0;
-    }
-    current = current->sibling;
-  }
-
-  printf("Directory name not found\n");
-  return -1;
+  else
+    cwd = goto_path(pathname);
 }
 
 int pwd_help(NODE *current)
@@ -176,6 +214,10 @@ int pwd()
 {
   pwd_help(cwd);
   printf("\n");
+}
+
+int rmdir()
+{
 }
 
 int main()
@@ -208,7 +250,7 @@ int main()
       mkdir(pathname);
       break;
     case 1:
-      ls();
+      ls(pathname);
       break;
     case 2:
       quit();
