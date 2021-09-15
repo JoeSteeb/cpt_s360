@@ -15,8 +15,8 @@ NODE *root, *cwd, *start;
 char line[128];
 char command[16], pathname[64];
 
-//               0       1      2
-char *cmd[] = {"mkdir", "ls", "quit", "cd", "pwd", 0};
+//               0       1      2      3      4       5
+char *cmd[] = {"mkdir", "ls", "quit", "cd", "pwd", "rmdir", 0};
 
 int findCmd(char *command)
 {
@@ -133,7 +133,7 @@ NODE *goto_path(char *pathname)
     i++;
   }
   current_dir = search_child(current_dir, buffer);
-  printf("%s\n", buffer);
+  // printf("%s\n", buffer);
   return current_dir;
 }
 
@@ -143,13 +143,12 @@ int ls(char *pathname)
   NODE *p;
   if (!strcmp(pathname, ""))
   {
-    printf("wtf");
     p = cwd->child;
   }
   else
   {
     p = goto_path(pathname);
-    printf("pathname = %s", p->name);
+    printf("pathname = %s\n", p->name);
   }
   printf("cwd contents = ");
   while (p)
@@ -192,7 +191,6 @@ int initialize()
 
 int cd(char *pathname)
 {
-  printf("pathname =%s", pathname);
   if (!strcmp(pathname, "/") || pathname[0] == '\0')
     cwd = root;
   else
@@ -216,7 +214,51 @@ int pwd()
   printf("\n");
 }
 
-int rmdir()
+int menu()
+{
+  printf("valid commands are:\n mkdir, rmdir, cd, ls, pwd, creat, rm, save, reload, menu, quit");
+}
+
+int removeFromList(NODE *pObject, char *pathname)
+{
+  NODE *current = pObject;
+  printf("parent = %s", current->name);
+  if (current->sibling)
+  {
+    current = current->child;
+    while (current->sibling)
+    {
+      if (strcmp(current->sibling->name, pathname))
+      {
+        if (current->sibling->sibling)
+          current->sibling = current->sibling->sibling;
+        else
+          current->sibling = NULL;
+        return 0;
+      }
+      current = current->sibling;
+    }
+  }
+  else
+  {
+    current->child = NULL;
+    return 0;
+  }
+  return -1;
+}
+
+int rmdir(char *pathname)
+{
+  NODE *temp = goto_path(pathname);
+  removeFromList(temp->parent, pathname);
+  free(temp);
+}
+
+int save()
+{
+}
+
+int reload()
 {
 }
 
@@ -260,6 +302,9 @@ int main()
       break;
     case 4:
       pwd();
+      break;
+    case 5:
+      rmdir(pathname);
       break;
     }
   }
