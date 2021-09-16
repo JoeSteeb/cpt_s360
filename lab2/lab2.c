@@ -15,8 +15,8 @@ NODE *root, *cwd, *start;
 char line[128];
 char command[16], pathname[64];
 
-//               0       1      2      3      4       5       6         7
-char *cmd[] = {"mkdir", "ls", "quit", "cd", "pwd", "rmdir", "creat", "save", 0};
+//               0       1      2      3      4       5       6         7       8
+char *cmd[] = {"mkdir", "ls", "quit", "cd", "pwd", "rmdir", "creat", "save", "reload", 0};
 
 int findCmd(char *command)
 {
@@ -64,45 +64,6 @@ int insert_child(NODE *parent, NODE *q)
   q->sibling = 0;
 }
 
-/***************************************************************
- This mkdir(char *name) makes a DIR in the current directory
- You MUST improve it to mkdir(char *pathname) for ANY pathname
-****************************************************************/
-
-int mkdir(char *name)
-{
-  NODE *p, *q;
-  printf("mkdir: name=%s\n", name);
-
-  if (!strcmp(name, "/") || !strcmp(name, ".") || !strcmp(name, ".."))
-  {
-    printf("can't mkdir with %s\n", name);
-    return -1;
-  }
-  if (name[0] == '/')
-    start = root;
-  else
-    start = cwd;
-
-  printf("check whether %s already exists\n", name);
-  p = search_child(start, name);
-  if (p)
-  {
-    printf("name %s already exists, mkdir FAILED\n", name);
-    return -1;
-  }
-  printf("--------------------------------------\n");
-  printf("ready to mkdir %s\n", name);
-  q = (NODE *)malloc(sizeof(NODE));
-  q->type = 'D';
-  strcpy(q->name, name);
-  insert_child(start, q);
-  printf("mkdir %s OK\n", name);
-  printf("--------------------------------------\n");
-
-  return 0;
-}
-
 NODE *goto_path(char *pathname)
 {
   int i = 0;
@@ -135,6 +96,82 @@ NODE *goto_path(char *pathname)
   current_dir = search_child(current_dir, buffer);
   // printf("%s\n", buffer);
   return current_dir;
+}
+
+/***************************************************************
+ This mkdir(char *name) makes a DIR in the current directory
+ You MUST improve it to mkdir(char *pathname) for ANY pathname
+****************************************************************/
+
+int makeFile(char *pathname, char type)
+{
+  bool local = true;
+  NODE *current;
+  char oldBuffer[64] = "";
+  char newBuffer[64] = "";
+  int i = 0;
+  int buffi = 0;
+
+  if (pathname[0] == '/')
+  {
+    current = root;
+    i++;
+  }
+  else
+    current = cwd;
+
+  if (pathname[0] == '\0')
+  {
+    printf("invalid argument, creat must have a pathname\n");
+    return -1;
+  }
+
+  while (pathname[i] != '\0')
+  {
+    if (pathname[i] == '/' && pathname[i + 1] != '\0')
+    {
+      // printf("\nhello2\n");
+      strcat(oldBuffer, newBuffer);
+      newBuffer[0] = '\0';
+      buffi = 0;
+      local = false;
+    }
+    else
+    {
+      // printf("\nhello\n");
+      newBuffer[buffi] = pathname[i];
+      buffi++;
+    }
+    i++;
+  }
+  printf("%s", newBuffer);
+  if (newBuffer[0] == '\0')
+  {
+    printf("invalid argument, creat must have a name\n");
+    return -1;
+  }
+
+  NODE *newNode = (NODE *)malloc(sizeof(NODE));
+  newNode->type = type;
+  strcpy(newNode->name, newBuffer);
+
+  if (local)
+    insert_child(current, newNode);
+  else
+    insert_child(goto_path(oldBuffer), newNode);
+}
+
+int mkdir(char *name)
+{
+  NODE *p, *q;
+  printf("mkdir: name=%s\n", name);
+
+  if (!strcmp(name, "/") || !strcmp(name, ".") || !strcmp(name, ".."))
+  {
+    printf("can't mkdir with %s\n", name);
+    return -1;
+  }
+  makeFile(name, 'D');
 }
 
 // This ls() list CWD. You MUST improve it to ls(char *pathname)
@@ -197,12 +234,12 @@ int cd(char *pathname)
     cwd = goto_path(pathname);
 }
 
-char *pwd_help(NODE *current, char *pathname)
+int pwd_help2(NODE *current, char *pathname)
 {
   if (current != root)
   {
     char s = '/';
-    pwd_help(current->parent, pathname);
+    pwd_help2(current->parent, pathname);
     strcat(pathname, current->name);
     strcat(pathname, &s);
   }
@@ -210,10 +247,17 @@ char *pwd_help(NODE *current, char *pathname)
     strcat(pathname, current->name);
 }
 
+int pwd_help(NODE *current, char *pathname)
+{
+  pwd_help2(current->parent, pathname);
+  strcat(pathname, current->name);
+}
+
 int pwd()
 {
   char pathname[64] = "";
-  printf("%s", pwd_help(cwd, pathname));
+  pwd_help(cwd, pathname);
+  printf("%s", pathname);
   printf("\n");
 }
 
@@ -252,51 +296,7 @@ int removeFromList(NODE *pObject, char *pathname)
 
 int creat(char *pathname)
 {
-  bool local = true;
-  char oldBuffer[64];
-  char newBuffer[64];
-  int i = 0;
-  int buffi = 0;
-
-  if (pathname[0] == '\0')
-  {
-    printf("invalid argument, creat must have a pathname\n");
-    return -1;
-  }
-
-  while (pathname[i] != '\0')
-  {
-    if (pathname[i] == '/' && pathname[i + 1] != '\0')
-    {
-      printf("\nhello2\n");
-      strcat(oldBuffer, newBuffer);
-      newBuffer[0] = '\0';
-      buffi = 0;
-      local = false;
-    }
-    else
-    {
-      printf("\nhello\n");
-      newBuffer[buffi] = pathname[i];
-      buffi++;
-    }
-    i++;
-  }
-  printf("%s", newBuffer);
-  if (newBuffer[0] == '\0')
-  {
-    printf("invalid argument, creat must have a name\n");
-    return -1;
-  }
-
-  NODE *newNode = (NODE *)malloc(sizeof(NODE));
-  newNode->type = 'F';
-  strcpy(newNode->name, newBuffer);
-
-  if (local)
-    insert_child(cwd, newNode);
-  else
-    insert_child(goto_path(oldBuffer), newNode);
+  makeFile(pathname, 'F');
 }
 
 int rmdir(char *pathname)
@@ -316,7 +316,8 @@ int saveHelp(FILE *fp, NODE *current)
     while (current)
     {
       char temp[64] = "";
-      fprintf(fp, "%c %s\n", current->type, pwd_help(current, temp));
+      pwd_help(current, temp);
+      fprintf(fp, "%c\t\t%s\n", current->type, temp);
       saveHelp(fp, current);
       current = current->sibling;
     }
@@ -327,8 +328,8 @@ int saveHelp(FILE *fp, NODE *current)
 int save()
 {
   FILE *fp = fopen("tree.txt", "w");
-  NODE *current = root;
-
+  fprintf(fp, "type\tpathname\n\n");
+  fprintf(fp, "D\t\t/\n");
   saveHelp(fp, root);
 
   fclose(fp);
@@ -337,18 +338,41 @@ int save()
 
 int reload()
 {
+  char buffer[64];
+
+  FILE *fp = fopen("tree.txt", "r");
+
+  for (int i = 0; i < 4; i++)
+    fscanf(fp, "%s", buffer);
+
+  while (fscanf(fp, "%s", buffer) == 1)
+  {
+    if (!strcmp(buffer, "D"))
+    {
+      fscanf(fp, "%s", buffer);
+      mkdir(buffer);
+    }
+    else
+    {
+      fscanf(fp, "%s", buffer);
+      creat(buffer);
+    }
+  }
+  return 0;
 }
 
 int test()
 {
-  mkdir("sos");
-  mkdir("one");
-  mkdir("two");
-  mkdir("three");
-  cd("sos");
-  mkdir("joj");
-  pwd();
-  save();
+  // mkdir("sos");
+  // mkdir("one");
+  // mkdir("two");
+  // mkdir("three");
+  // creat("four");
+  // cd("sos");
+  // mkdir("joj");
+  // creat("four");
+  // pwd();
+  // save();
   return 0;
 }
 
@@ -403,6 +427,9 @@ int main()
       break;
     case 7:
       save(pathname);
+      break;
+    case 8:
+      reload(pathname);
       break;
     }
   }

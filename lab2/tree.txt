@@ -1,5 +1,10 @@
-D /sos/
-D /sos/joj/
-D /one/
-D /two/
-D /three/
+type	pathname
+
+D		/
+D		/sos
+D		/sos/joj
+F		/sos/four
+D		/one
+D		/two
+D		/three
+F		/four
