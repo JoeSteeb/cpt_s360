@@ -15,8 +15,8 @@ NODE *root, *cwd, *start;
 char line[128];
 char command[16], pathname[64];
 
-//               0       1      2      3      4       5       6         7       8         9
-char *cmd[] = {"mkdir", "ls", "quit", "cd", "pwd", "rmdir", "creat", "save", "reload", "menu", 0};
+//               0       1      2      3      4       5       6         7       8
+char *cmd[] = {"mkdir", "ls", "quit", "cd", "pwd", "rmdir", "creat", "save", "reload", 0};
 
 int findCmd(char *command)
 {
@@ -109,7 +109,6 @@ int makeFile(char *pathname, char type)
   NODE *current;
   char oldBuffer[64] = "";
   char newBuffer[64] = "";
-
   int i = 0;
   int buffi = 0;
 
@@ -230,13 +229,7 @@ int initialize()
 int cd(char *pathname)
 {
   if (!strcmp(pathname, "/") || pathname[0] == '\0')
-    cwd == root;
-
-  else if (pathname[0] = '/')
-  {
     cwd = root;
-    cwd = goto_path(&pathname[1]);
-  }
   else
     cwd = goto_path(pathname);
 }
@@ -437,9 +430,6 @@ int main()
       break;
     case 8:
       reload(pathname);
-      break;
-    case 9:
-      menu();
       break;
     }
   }
