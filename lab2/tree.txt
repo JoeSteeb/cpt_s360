@@ -1,10 +1,6 @@
 type	pathname
 
 D		/
-D		/sos
-D		/sos/joj
-F		/sos/four
-D		/one
-D		/two
-D		/three
-F		/four
+D		/hello
+D		/hello2
+D		/hello2/test
