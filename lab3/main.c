@@ -150,6 +150,7 @@ int main(int argc, char *argv[], char *env[])
 
         //     continue;
         // }
+        //check
 
         if (strcmp(cmd, "exit") == 0)
             exit(0);
