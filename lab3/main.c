@@ -49,7 +49,21 @@ int checkdir(char *pathname, char *filename)
     return 0;
 }
 
-int pipeIt(char *program1, char *program2)
+int getFile(char *line, char *cmd)
+{
+    for (int i = 0; i < ndir; i++)
+    {
+        if (checkdir(dir[i], cmd))
+        {
+            strcpy(line, dir[i]);
+            strcat(line, "/");
+            strcat(line, cmd);
+            //break;
+        }
+    }
+}
+
+int pipeIt(char *p1Path, char *args1[], char *p2Path, char *args2[], char *env[])
 {
     int fd[2];
     if (pipe(fd) == -1)
@@ -67,7 +81,7 @@ int pipeIt(char *program1, char *program2)
         dup2(fd[1], STDOUT_FILENO);
         close(fd[0]);
         close(fd[1]);
-        execlp("cat", "cat", "/home/j/code/cs360/tests/pipe/main.c", NULL);
+        execve(p1Path, args1, env);
     }
 
     int pid2 = fork();
@@ -82,7 +96,7 @@ int pipeIt(char *program1, char *program2)
         dup2(fd[0], STDIN_FILENO);
         close(fd[0]);
         close(fd[1]);
-        execlp("grep", "grep", "main", NULL);
+        execve(p2Path, args2, env);
     }
 
     close(fd[0]);
@@ -186,6 +200,26 @@ int main(int argc, char *argv[], char *env[])
         if (strcmp(cmd, "exit") == 0)
             exit(0);
 
+        if (n > 3 && !strcmp(arg[2], "|"))
+        {
+            char *args1[64];
+            char *args2[64];
+
+            char p1Path[PATH_MAX];
+            char p2Path[PATH_MAX];
+
+            getFile(p1Path, arg[0]);
+            getFile(p2Path, arg[3]);
+
+            args1[0] = arg[0];
+            args1[1] = arg[1];
+            args2[0] = arg[3];
+            args2[1] = arg[4];
+
+            pipeIt(p1Path, args1, p2Path, args2, env);
+            continue;
+        }
+
         pid = fork();
 
         if (pid)
@@ -218,15 +252,7 @@ int main(int argc, char *argv[], char *env[])
             }
 
             // make a cmd line = dir[0]/cmd for execve()
-            for (int i = 0; i < ndir; i++)
-            {
-                if (checkdir(dir[i], cmd))
-                {
-                    strcpy(line, dir[i]);
-                    strcat(line, "/");
-                    strcat(line, cmd);
-                }
-            }
+            getFile(line, cmd);
 
             int r = execve(line, arg, env);
 
