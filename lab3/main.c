@@ -17,34 +17,44 @@ char dpath[128]; // hold dir strings in PATH
 char *dir[64];   // dir string pointers
 int ndir;        // number of dirs
 
-int tokenize(char *pathname) // YOU have done this in LAB2
-{                            // YOU better know how to apply it from now on
+int tokenize(char *pathname, char *output[], char *token, char *holder, int *num) // YOU have done this in LAB2
+{                                                                                 // YOU better know how to apply it from now on
     char *s;
-    strcpy(gpath, pathname); // copy into global gpath[]
-    s = strtok(gpath, " ");
-    n = 0;
+    strcpy(holder, pathname); // copy into global gpath[]
+    s = strtok(holder, token);
+    *num = 0;
 
     while (s)
     {
-        arg[n++] = s; // token string pointers
-        s = strtok(0, " ");
+        output[(*num)++] = s; // token string pointers
+        s = strtok(0, token);
     }
-    arg[n] = 0; // arg[n] = NULL pointer
+    output[*num] = 0; // arg[n] = NULL pointer
 }
 
 int main(int argc, char *argv[], char *env[])
 {
-    printf("%s, \n", env[52]);
-
     int i;
     int pid, status;
     char *cmd;
     char line[28];
+    char *space = " ";
+    char *colon = ":";
+
+    for (int i = 0; env[i] != NULL; i++)
+    {
+        if (strstr(env[i], "PATH=/"))
+        {
+            printf("\n%s\n", env[i]);
+            strcpy(dpath, env[i]);
+            break;
+        }
+    }
+
+    tokenize(&dpath[5], dir, colon, dpath, &ndir);
 
     // The base code assume only ONE dir[0] -> "/bin"
     // YOU do the general case of many dirs from PATH !!!!
-    dir[0] = "/bin";
-    ndir = 1;
 
     // show dirs
     for (i = 0; i < ndir; i++)
@@ -60,7 +70,10 @@ int main(int argc, char *argv[], char *env[])
         if (line[0] == 0)
             continue;
 
-        tokenize(line);
+        tokenize(line, arg, space, gpath, &n);
+
+        // printf("path[1]: %s", pathVars[1]);
+        // printf("path[2]: %s", pathVars[2]);
 
         for (i = 0; i < n; i++)
         { // show token strings
