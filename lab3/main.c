@@ -37,7 +37,7 @@ int main(int argc, char *argv[], char *env[])
     int i;
     int pid, status;
     char *cmd;
-    char line[28];
+    char line[128];
     char *space = " ";
     char *colon = ":";
 
