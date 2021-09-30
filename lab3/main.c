@@ -43,7 +43,13 @@ int main(int argc, char *argv[], char *env[])
 
     for (int i = 0; env[i] != NULL; i++)
     {
-        if (strstr(env[i], "PATH=/"))
+        char sub[4];
+        for (int j = 0; j < 4; j++)
+        {
+            sub[j] = env[i][j];
+        }
+
+        if (!strcmp(sub, "PATH"))
         {
             printf("\n%s\n", env[i]);
             strcpy(dpath, env[i]);
