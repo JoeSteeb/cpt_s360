@@ -4,6 +4,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 char gpath[128]; // hold token strings
 char *arg[64];   // token string pointers
@@ -19,6 +23,7 @@ int tokenize(char *pathname) // YOU have done this in LAB2
     strcpy(gpath, pathname); // copy into global gpath[]
     s = strtok(gpath, " ");
     n = 0;
+
     while (s)
     {
         arg[n++] = s; // token string pointers
@@ -29,6 +34,8 @@ int tokenize(char *pathname) // YOU have done this in LAB2
 
 int main(int argc, char *argv[], char *env[])
 {
+    printf("%s, \n", env[52]);
+
     int i;
     int pid, status;
     char *cmd;
@@ -49,6 +56,7 @@ int main(int argc, char *argv[], char *env[])
         printf("enter a command line : ");
         fgets(line, 128, stdin);
         line[strlen(line) - 1] = 0;
+        printf("line: %s", line);
         if (line[0] == 0)
             continue;
 
@@ -67,6 +75,69 @@ int main(int argc, char *argv[], char *env[])
             chdir(arg[1]);
             continue;
         }
+
+        // int printFile(char *filePath)
+        // {
+        //     FILE *filePtr;
+        //     char c;
+        //     filePtr = fopen(filePath, "r");
+
+        //     if (!filePtr)
+        //     {
+        //         printf("cannot cat file");
+        //         return -1;
+        //     }
+
+        //     c = fgetc(filePtr);
+        //     while (c != EOF)
+        //     {
+        //         putchar(c);
+        //         c = fgetc(filePtr);
+        //     }
+        // }
+
+        // if (strcmp(cmd, "cat") == 0)
+        // {
+        //     printFile(arg[1]);
+        //     continue;
+        // }
+
+        // if (strcmp(cmd, "ls") == 0)
+        // {
+        //     DIR *cDir;
+        //     struct dirent *cFile;
+
+        //     if (!arg[1])
+        //     {
+        //         printf("hello");
+        //         char cwd[PATH_MAX];
+        //         getcwd(cwd, sizeof(cwd));
+        //         cDir = opendir(cwd);
+        //     }
+
+        //     else
+        //     {
+        //         printf("wtf");
+        //         cDir = opendir(arg[1]);
+        //     }
+
+        //     while (cFile = readdir(cDir))
+        //     {
+        //         char fPath[32] = "";
+        //         strcpy(fPath, arg[1]);
+        //         strcat(fPath, "/");
+        //         strcat(fPath, cFile->d_name);
+        //         struct stat info;
+        //         stat(fPath, &info);
+        //         fPath[0] = '\0';
+
+        //         printf("%ld", info.st_size);
+        //         printf("%s\n", cFile->d_name);
+        //     }
+
+        //     continue;
+        // }
+
         if (strcmp(cmd, "exit") == 0)
             exit(0);
 
