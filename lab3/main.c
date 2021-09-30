@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 char gpath[128]; // hold token strings
@@ -30,6 +31,22 @@ int tokenize(char *pathname, char *output[], char *token, char *holder, int *num
         s = strtok(0, token);
     }
     output[*num] = 0; // arg[n] = NULL pointer
+}
+
+int checkdir(char *pathname, char *filename)
+{
+    DIR *cDir;
+    struct dirent *cFile;
+    cDir = opendir(pathname);
+
+    while (cFile = readdir(cDir))
+    {
+        if (!strcmp(cFile->d_name, filename))
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 int main(int argc, char *argv[], char *env[])
@@ -120,42 +137,6 @@ int main(int argc, char *argv[], char *env[])
         //     printFile(arg[1]);
         //     continue;
         // }
-
-        // if (strcmp(cmd, "ls") == 0)
-        // {
-        //     DIR *cDir;
-        //     struct dirent *cFile;
-
-        //     if (!arg[1])
-        //     {
-        //         printf("hello");
-        //         char cwd[PATH_MAX];
-        //         getcwd(cwd, sizeof(cwd));
-        //         cDir = opendir(cwd);
-        //     }
-
-        //     else
-        //     {
-        //         printf("wtf");
-        //         cDir = opendir(arg[1]);
-        //     }
-
-        //     while (cFile = readdir(cDir))
-        //     {
-        //         char fPath[32] = "";
-        //         strcpy(fPath, arg[1]);
-        //         strcat(fPath, "/");
-        //         strcat(fPath, cFile->d_name);
-        //         struct stat info;
-        //         stat(fPath, &info);
-        //         fPath[0] = '\0';
-
-        //         printf("%ld", info.st_size);
-        //         printf("%s\n", cFile->d_name);
-        //     }
-
-        //     continue;
-        // }
         //check
 
         if (strcmp(cmd, "exit") == 0)
@@ -173,13 +154,35 @@ int main(int argc, char *argv[], char *env[])
         }
         else
         {
+            int numCats = 1;
             printf("child sh %d running\n", getpid());
+            if (n > 3)
+            {
+                if (arg[2][0] == '>')
+                {
+                    while (arg[2][numCats])
+                        numCats++;
+
+                    char oFilepath[PATH_MAX];
+                    getcwd(oFilepath, sizeof(oFilepath));
+                    strcat(oFilepath, "/");
+                    strcat(oFilepath, arg[3]);
+                    int redirect_fd = open(oFilepath, O_CREAT | O_TRUNC | O_WRONLY);
+                    dup2(redirect_fd, STDOUT_FILENO);
+                    close(redirect_fd);
+                }
+            }
 
             // make a cmd line = dir[0]/cmd for execve()
-            strcpy(line, dir[0]);
-            strcat(line, "/");
-            strcat(line, cmd);
-            printf("line = %s\n", line);
+            for (int i = 0; i < ndir; i++)
+            {
+                if (checkdir(dir[i], cmd))
+                {
+                    strcpy(line, dir[i]);
+                    strcat(line, "/");
+                    strcat(line, cmd);
+                }
+            }
 
             int r = execve(line, arg, env);
 
