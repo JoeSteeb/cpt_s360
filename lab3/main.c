@@ -200,26 +200,6 @@ int main(int argc, char *argv[], char *env[])
         if (strcmp(cmd, "exit") == 0)
             exit(0);
 
-        if (n > 3 && !strcmp(arg[2], "|"))
-        {
-            char *args1[64];
-            char *args2[64];
-
-            char p1Path[PATH_MAX];
-            char p2Path[PATH_MAX];
-
-            getFile(p1Path, arg[0]);
-            getFile(p2Path, arg[3]);
-
-            args1[0] = arg[0];
-            args1[1] = arg[1];
-            args2[0] = arg[3];
-            args2[1] = arg[4];
-
-            pipeIt(p1Path, args1, p2Path, args2, env);
-            continue;
-        }
-
         pid = fork();
 
         if (pid)
@@ -248,6 +228,26 @@ int main(int argc, char *argv[], char *env[])
                     int redirect_fd = open(oFilepath, O_CREAT | O_TRUNC | O_WRONLY);
                     dup2(redirect_fd, STDOUT_FILENO);
                     close(redirect_fd);
+                }
+
+                if (!strcmp(arg[2], "|"))
+                {
+                    char *args1[64];
+                    char *args2[64];
+
+                    char p1Path[PATH_MAX];
+                    char p2Path[PATH_MAX];
+
+                    getFile(p1Path, arg[0]);
+                    getFile(p2Path, arg[3]);
+
+                    args1[0] = arg[0];
+                    args1[1] = arg[1];
+                    args2[0] = arg[3];
+                    args2[1] = arg[4];
+
+                    pipeIt(p1Path, args1, p2Path, args2, env);
+                    continue;
                 }
             }
 
