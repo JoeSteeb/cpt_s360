@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <libgen.h> // for dirname()/basename()
 #include <time.h>
+#include <stdbool.h>
 
 #define MAX 256
 #define PORT 1234
@@ -39,20 +40,20 @@ int tokenize(char *pathname, char *output[], char *token, int *num)
 
 int ls(char *CWD)
 {
-    DIR *mydir;
-    struct dirent *myfile;
-    struct stat mystat;
+    DIR *dir;
+    struct dirent *file1;
+    struct stat stat1;
 
     char buf[512];
-    mydir = opendir(CWD);
-    while ((myfile = readdir(mydir)) != NULL)
+    dir = opendir(CWD);
+    while ((file1 = readdir(dir)) != NULL)
     {
-        sprintf(buf, "%s/%s", CWD, myfile->d_name);
-        stat(buf, &mystat);
-        printf("%zu", mystat.st_size);
-        printf(" %s\n", myfile->d_name);
+        sprintf(buf, "%s/%s", CWD, file1->d_name);
+        stat(buf, &stat1);
+        printf("%zu", stat1.st_size);
+        printf(" %s\n", file1->d_name);
     }
-    closedir(mydir);
+    closedir(dir);
 }
 
 int cat(char *pathname)
@@ -79,8 +80,8 @@ int main(int argc, char *argv[], char *env[])
     int n;
     char how[64];
     int i;
-    const int cSize = 8; //  0        1         2     3       4      5     6        7
-    char *commands[] = {"lmkdir", "lrmdir", "lrm", "lcd", "lpwd", "lls", "lcat"};
+    const int cSize = 9; //  0        1         2     3       4      5     6        7
+    char *commands[] = {"lmkdir", "lrmdir", "lrm", "lcd", "lpwd", "lls", "lcat", "get", "put"};
 
     printf("1. create a socket\n");
     sfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -106,13 +107,15 @@ int main(int argc, char *argv[], char *env[])
     printf("********  processing loop  *********\n");
     while (1)
     {
-        char *tokCommands[MAX];
+        char *tokCommands[MAX] = {NULL};
         char pathname[MAX];
         char CWD[MAX];
         char lineCpy[MAX];
         int tokNumber;
         int commandIndex;
-        int found = 0;
+        bool found = false;
+        bool getCheck = false;
+        bool putCheck = false;
 
         printf("input a line : ");
         bzero(line, MAX);        // zero out line[ ]
@@ -142,46 +145,56 @@ int main(int argc, char *argv[], char *env[])
                 break;
             }
         }
-        printf("%s", pathname);
+        // printf("%s", pathname);
 
         switch (commandIndex)
         {
         case 0:
             mkdir(pathname, 0755);
-            found = 1;
+            found = true;
             break;
         case 1:
             rmdir(pathname);
-            found = 1;
+            found = true;
             break;
         case 2:
             unlink(pathname);
-            found = 1;
+            found = true;
             break;
         case 3:
             chdir(pathname);
-            found = 1;
+            found = true;
             break;
         case 4:
             printf("\n%s\n", pathname);
-            found = 1;
+            found = true;
             break;
         case 5:
             ls(pathname);
-            found = 1;
+            found = true;
             break;
         case 6:
             cat(pathname);
-            found = 1;
+            found = true;
+            break;
+        case 7:
+            getCheck = true;
+            found = true;
+            break;
+        case 8:
+            putCheck = true;
+            found = true;
             break;
 
         default:
             break;
         }
+        printf("found= %d", found);
 
         if (line[0] == 0) // exit if NULL line
             exit(0);
-        if (!found)
+
+        if (found)
         {
             // Send ENTIRE line to server
             n = write(sfd, line, MAX);
@@ -189,7 +202,36 @@ int main(int argc, char *argv[], char *env[])
 
             // Read a line from sock and show it
             n = read(sfd, ans, MAX);
-            printf("client: read  n=%d bytes; echo=(%s)\n", n, ans);
+            printf("client: read  n=%d bytes; echo=%s\n", n, ans);
+
+            if (putCheck)
+            {
+                FILE *fp = fopen(pathname, "r");
+
+                if (fp != NULL)
+                {
+                    fseek(fp, 0L, SEEK_END);
+
+                    long int length = ftell(fp);
+                    char lengthAsString[MAX];
+                    sprintf(lengthAsString, "%ld", length);
+
+                    write(sfd, lengthAsString, MAX);
+                    printf("tried to write %s", lengthAsString);
+
+                    fclose(fp);
+                    read(sfd, line, MAX);
+
+                    fp = fopen(pathname, "r");
+                    char file1[length];
+                    fread(file1, sizeof(char), length, fp);
+                    printf("%s", file1);
+                }
+                else
+                {
+                    printf("error opening file\n");
+                }
+            }
         }
     }
 }
