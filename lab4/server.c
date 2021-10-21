@@ -14,6 +14,7 @@
 #include <dirent.h>
 #include <libgen.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define MAX 256
 #define PORT 1234
@@ -23,8 +24,8 @@ int n;
 char ans[MAX];
 char line[MAX];
 
-int tokenize(char *pathname, char *output[], char *token, int *num) // YOU have done this in LAB2
-{                                                                   // YOU better know how to apply it from now on
+int tokenize(char *pathname, char *output[], char *token, int *num)
+{
   char *s;
   *num = 0;
   s = strtok(pathname, token);
@@ -37,27 +38,33 @@ int tokenize(char *pathname, char *output[], char *token, int *num) // YOU have 
   output[*num] = 0; // arg[n] = NULL pointer
 }
 
-int ls(char *CWD)
+int ls(char *CWD, char *buffer)
 {
   DIR *mydir;
   struct dirent *myfile;
   struct stat mystat;
 
   char buf[512];
+  char buf2[300];
   mydir = opendir(CWD);
   while ((myfile = readdir(mydir)) != NULL)
   {
     sprintf(buf, "%s/%s", CWD, myfile->d_name);
     stat(buf, &mystat);
-    printf("%zu", mystat.st_size);
-    printf(" %s\n", myfile->d_name);
+    sprintf(buf2, "%zu", mystat.st_size);
+    strcat(buffer, buf2);
+    sprintf(buf2, " %s\n", myfile->d_name);
+    strcat(buffer, buf2);
   }
   closedir(mydir);
+
+  printf("ls called\n");
+  printf("trying to ls: %s\n", CWD);
 }
 
 int main()
 {
-  const int cSize = 8;
+  const int cSize = 8; //  0      1      2     3       4      5     6     7
   char *commands[] = {"mkdir", "rmdir", "rm", "cd", "pwd", "ls", "get", "put"};
   int sfd, cfd, len;
   struct sockaddr_in saddr, caddr;
@@ -93,6 +100,7 @@ int main()
   }
   while (1)
   {
+
     // Try to accept a client connection as descriptor newsock
     length = sizeof(caddr);
     cfd = accept(sfd, (struct sockaddr *)&caddr, &length);
@@ -110,12 +118,17 @@ int main()
     // Processing loop
     while (1)
     {
-      char *tokCommands[MAX];
+      char *tokCommands[MAX] = {NULL};
       char pathname[MAX];
+      char sendBuffer[MAX] = "";
       char CWD[MAX];
+      char lineCpy[MAX];
       int tokNumber;
       int commandIndex;
+      int fileReadSize;
+      bool readPut;
 
+      getcwd(CWD, sizeof(CWD));
       printf("server ready for next request ....\n");
       n = read(cfd, line, MAX);
       if (n == 0)
@@ -125,9 +138,13 @@ int main()
         break;
       }
 
-      tokenize(line, tokCommands, " ", &tokNumber);
+      // show the line string
+      printf("server: read  n=%d bytes; line=[%s]\n", n, line);
 
-      // printf("%s\n%s", tokCommands[0], tokCommands[1]);
+      strcpy(lineCpy, line);
+      tokenize(lineCpy, tokCommands, " ", &tokNumber);
+
+      // printf("%s%s", tokCommands[0], tokCommands[1]);
       // printf("%s\n", CWD);
 
       strcpy(pathname, CWD);
@@ -139,13 +156,13 @@ int main()
           commandIndex = i;
           if (tokCommands[1])
           {
-            strcat(CWD, "/");
+            strcat(pathname, "/");
             strcat(pathname, tokCommands[1]);
           }
           break;
         }
       }
-      printf("%s", pathname);
+      // printf("%s", pathname);
 
       switch (commandIndex)
       {
@@ -158,31 +175,49 @@ int main()
       case 2:
         unlink(pathname);
         break;
-      case 4:
+      case 3:
         chdir(pathname);
         break;
+      case 4:
+        //send back
+        sprintf(sendBuffer, "\n%s\n", pathname);
+        break;
       case 5:
-        ls(pathname);
+        //send back
+        ls(pathname, sendBuffer);
+        printf("hello?");
+        // printf("%s", sendBuffer);
         break;
       case 6:
         break;
       case 7:
+        readPut = true;
         break;
 
       default:
         break;
       }
 
-      // show the line string
-      printf("server: read  n=%d bytes; line=[%s]\n", n, line);
-
-      strcat(line, " ECHO");
-
       // send the echo line to client
+      strcat(line, "\n");
+      strcat(line, sendBuffer);
       n = write(cfd, line, MAX);
+      // write(cfd, sendBuffer, MAX);
 
       printf("server: wrote n=%d bytes; ECHO=[%s]\n", n, line);
       printf("server: ready for next request\n");
+
+      if (readPut)
+      {
+        char sizeAsString[MAX];
+        read(cfd, sizeAsString, MAX);
+        // printf("read: %s", sizeAsString);
+
+        sscanf(sizeAsString, "%d", &fileReadSize);
+        printf("file to put size = %dbytes", fileReadSize);
+
+        write(cfd, line, MAX);
+      }
     }
   }
 }
