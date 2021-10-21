@@ -23,8 +23,8 @@ int n;
 struct sockaddr_in saddr;
 int sfd;
 
-int tokenize(char *pathname, char *output[], char *token, int *num) // YOU have done this in LAB2
-{                                                                   // YOU better know how to apply it from now on
+int tokenize(char *pathname, char *output[], char *token, int *num)
+{
     char *s;
     *num = 0;
     s = strtok(pathname, token);
@@ -55,13 +55,32 @@ int ls(char *CWD)
     closedir(mydir);
 }
 
+int cat(char *pathname)
+{
+    FILE *fp;
+
+    fp = fopen(pathname, "r");
+    char c;
+    c = fgetc(fp);
+    while (c != EOF)
+    {
+        printf("%c", c);
+        c = fgetc(fp);
+    }
+
+    fclose(fp);
+
+    // else
+    //     printf("\nERROR, could not open file: %s", pathname);
+}
+
 int main(int argc, char *argv[], char *env[])
 {
     int n;
     char how[64];
     int i;
     const int cSize = 8; //  0        1         2     3       4      5     6        7
-    char *commands[] = {"lmkdir", "lrmdir", "lrm", "lcd", "lpwd", "lls", "get", "put"};
+    char *commands[] = {"lmkdir", "lrmdir", "lrm", "lcd", "lpwd", "lls", "lcat"};
 
     printf("1. create a socket\n");
     sfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -105,7 +124,7 @@ int main(int argc, char *argv[], char *env[])
         strcpy(lineCpy, line);
         tokenize(lineCpy, tokCommands, " ", &tokNumber);
 
-        printf("%s%s", tokCommands[0], tokCommands[1]);
+        // printf("%s%s", tokCommands[0], tokCommands[1]);
         // printf("%s\n", CWD);
 
         strcpy(pathname, CWD);
@@ -117,7 +136,7 @@ int main(int argc, char *argv[], char *env[])
                 commandIndex = i;
                 if (tokCommands[1])
                 {
-                    strcat(CWD, "/");
+                    strcat(pathname, "/");
                     strcat(pathname, tokCommands[1]);
                 }
                 break;
@@ -139,8 +158,12 @@ int main(int argc, char *argv[], char *env[])
             unlink(pathname);
             found = 1;
             break;
-        case 4:
+        case 3:
             chdir(pathname);
+            found = 1;
+            break;
+        case 4:
+            printf("\n%s\n", pathname);
             found = 1;
             break;
         case 5:
@@ -148,8 +171,8 @@ int main(int argc, char *argv[], char *env[])
             found = 1;
             break;
         case 6:
-            break;
-        case 7:
+            cat(pathname);
+            found = 1;
             break;
 
         default:
