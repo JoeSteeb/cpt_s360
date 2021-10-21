@@ -1,3 +1,4 @@
+
 /***** LAB3 base code *****/
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,8 +64,22 @@ int getFile(char *line, char *cmd)
     }
 }
 
-int pipeIt(char *p1Path, char *args1[], char *p2Path, char *args2[], char *env[])
+int pipeIt(char *env[])
 {
+    char *args1[64];
+    char *args2[64];
+
+    char p1Path[PATH_MAX];
+    char p2Path[PATH_MAX];
+
+    getFile(p1Path, arg[0]);
+    getFile(p2Path, arg[3]);
+
+    args1[0] = arg[0];
+    args1[1] = arg[1];
+    args2[0] = arg[3];
+    args2[1] = arg[4];
+
     int fd[2];
     if (pipe(fd) == -1)
     {
@@ -97,6 +112,59 @@ int pipeIt(char *p1Path, char *args1[], char *p2Path, char *args2[], char *env[]
         close(fd[0]);
         close(fd[1]);
         execve(p2Path, args2, env);
+    }
+
+    close(fd[0]);
+    close(fd[1]);
+
+    waitpid(pid2, NULL, 0);
+    waitpid(pid1, NULL, 0);
+    return 0;
+}
+
+int pipeNext(char *env[])
+{
+    char *args3[64];
+
+    char p3Path[PATH_MAX];
+
+    getFile(p3Path, arg[6]);
+
+    args3[0] = arg[6];
+    args3[1] = arg[7];
+
+    int fd[2];
+    if (pipe(fd) == -1)
+    {
+        return 1;
+    }
+
+    int pid1 = fork();
+    if (pid1 < 0)
+    {
+        return 2;
+    }
+    if (pid1 == 0)
+    {
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[0]);
+        close(fd[1]);
+        pipeIt(env);
+    }
+
+    int pid2 = fork();
+
+    if (pid2 < 0)
+    {
+        return 3;
+    }
+
+    if (pid2 == 0)
+    {
+        dup2(fd[0], STDIN_FILENO);
+        close(fd[0]);
+        close(fd[1]);
+        execve(p3Path, args3, env);
     }
 
     close(fd[0]);
@@ -230,23 +298,14 @@ int main(int argc, char *argv[], char *env[])
                     close(redirect_fd);
                 }
 
-                if (!strcmp(arg[2], "|"))
+                if (n > 5 && !strcmp(arg[5], "|"))
                 {
-                    char *args1[64];
-                    char *args2[64];
-
-                    char p1Path[PATH_MAX];
-                    char p2Path[PATH_MAX];
-
-                    getFile(p1Path, arg[0]);
-                    getFile(p2Path, arg[3]);
-
-                    args1[0] = arg[0];
-                    args1[1] = arg[1];
-                    args2[0] = arg[3];
-                    args2[1] = arg[4];
-
-                    pipeIt(p1Path, args1, p2Path, args2, env);
+                    pipeNext(env);
+                    continue;
+                }
+                else if (!strcmp(arg[2], "|"))
+                {
+                    pipeIt(env);
                     continue;
                 }
             }
@@ -264,20 +323,14 @@ int main(int argc, char *argv[], char *env[])
 
 /********************* YOU DO ***********************
 1. I/O redirections:
-
 Example: line = arg0 arg1 ... > argn-1
-
   check each arg[i]:
   if arg[i] = ">" {
      arg[i] = 0; // null terminated arg[ ] array 
      // do output redirection to arg[i+1] as in Page 131 of BOOK
   }
   Then execve() to change image
-
-
 2. Pipes:
-
 Single pipe   : cmd1 | cmd2 :  Chapter 3.10.3, 3.11.2
-
 Multiple pipes: Chapter 3.11.2
 ****************************************************/
