@@ -217,7 +217,7 @@ int main(int argc, char *argv[], char *env[])
                     sprintf(lengthAsString, "%ld", length);
 
                     write(sfd, lengthAsString, MAX);
-                    printf("tried to write %s", lengthAsString);
+                    printf("tried to write %sbytes:\n", lengthAsString);
 
                     fclose(fp);
                     read(sfd, line, MAX);
@@ -225,7 +225,9 @@ int main(int argc, char *argv[], char *env[])
                     fp = fopen(pathname, "r");
                     char file1[length];
                     fread(file1, sizeof(char), length, fp);
-                    printf("%s", file1);
+                    file1[length] = 0;
+                    printf("%s\n", file1);
+                    write(sfd, file1, length);
                 }
                 else
                 {

@@ -214,9 +214,17 @@ int main()
         // printf("read: %s", sizeAsString);
 
         sscanf(sizeAsString, "%d", &fileReadSize);
+        char fileBuffer[fileReadSize];
+
         printf("file to put size = %dbytes", fileReadSize);
 
         write(cfd, line, MAX);
+
+        read(cfd, fileBuffer, fileReadSize);
+
+        FILE *fp;
+        fp = fopen(pathname, "w");
+        fprintf(fp, "%s", fileBuffer);
       }
     }
   }
